@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vehicle Density Visualization</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h2>Vehicle Density Over Time</h2>
+    <canvas id="densityChart"></canvas>
+
+    <script>
+        let densityChart;
+
+        async function fetchDensityData() {
+            try {
+                const response = await fetch('/density_data');
+                const data = await response.json();
+                console.log("🔹 Fetched density data:", data);  // Debugging output
+                updateChart(data);
+            } catch (error) {
+                console.error("❌ Error fetching density data:", error);
+            }
+        }
+
+        function updateChart(data) {
+            const ctx = document.getElementById('densityChart').getContext('2d');
+
+            if (densityChart) {
+                densityChart.destroy();  // Destroy old chart to update properly
+            }
+
+            densityChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map((_, i) => `Segment ${i + 1}`),
+                    datasets: [{
+                        label: 'Density (vehicles/m)',
+                        data: data,
+                        borderColor: 'blue',
+                        backgroundColor: 'rgba(0, 0, 255, 0.1)',
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        fetchDensityData();  // Fetch initially
+        setInterval(fetchDensityData, 5000);  // Refresh every 5 seconds
+    </script>
+</body>
+</html>
