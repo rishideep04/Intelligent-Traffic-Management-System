@@ -14,7 +14,16 @@ def send_density_update(density):
     global density_data
     density_data.append(density)
 
+
 @app.route('/')
+def main_file():
+    return render_template('main_page.html')
+
+@app.route('/main_page.html')
+def main_page():
+    return render_template('main_page.html')
+
+@app.route('/upload.html')
 def upload_file():
     return render_template('upload.html')
 
@@ -46,9 +55,12 @@ def update_density():
 
 
 
-@app.route('/visualization')
+@app.route('/visualization.html')
 def visualization():
     return render_template('visualization.html')
+@app.route('/teamMembers.html')
+def team_file():
+    return render_template('teamMembers.html') 
 
 @app.route('/density_data')
 def get_density_data():
