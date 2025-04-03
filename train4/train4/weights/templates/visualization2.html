@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vehicle Density Visualization</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #2c3e50, #4ca1af);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            margin: 0;
+            color: #fff;
+            text-align: center;
+        }
+        h2 {
+            margin-bottom: 10px;
+            font-size: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .chart-container {
+            width: 45%; /* Reduced width for compact size */
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            margin: 10px;
+            animation: fadeIn 1s ease-in-out;
+        }
+        canvas {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        .graphs-wrapper {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+        .home-button {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            padding: 8px 15px;
+            background: #4992a0;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: 0.3s ease;
+        }
+        .home-button:hover {
+            background: #357d89;
+        }
+        
+    </style>
+</head>
+<body>
+    <h2>Vehicle Density Over Time</h2>
+    <div class="graphs-wrapper">
+    <div class="chart-container">
+        <h2 id="video1-title">Video 1</h2>
+        <canvas id="densityChart1"></canvas>
+    </div>
+    
+    <div class="chart-container">
+        <h2 id="video2-title">Video 2</h2>
+        <canvas id="densityChart2"></canvas>
+    </div>
+</div>
+    <script>
+        let densityChart1, densityChart2;
+
+        async function fetchDensityData() {
+            try {
+                const response = await fetch('/density_data');
+                const data = await response.json();
+                console.log("🔹 Fetched density data:", data);  // Debugging output
+                updateCharts(data);
+            } catch (error) {
+                console.error("❌ Error fetching density data:", error);
+            }
+        }
+        
+        function updateCharts(data) {
+            const ctx1 = document.getElementById('densityChart1').getContext('2d');
+            const ctx2 = document.getElementById('densityChart2').getContext('2d');
+        
+            const filenames = Object.keys(data);
+            if (filenames.length === 0) {
+                console.error("❌ Error: No density data found.");
+                return;
+            }
+        
+            const [file1, file2] = filenames;
+            const densityData1 = data[file1] || [];
+            const densityData2 = data[file2] || [];
+        
+            document.getElementById('video1-title').innerText = `Density for ${file1}`;
+            document.getElementById('video2-title').innerText = `Density for ${file2}`;
+        
+            // Destroy existing charts if they exist
+            if (densityChart1) densityChart1.destroy();
+            if (densityChart2) densityChart2.destroy();
+        
+            densityChart1 = new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: densityData1.map((_, i) => `Segment ${i + 1}`),
+                    datasets: [{
+                        label: 'Density (vehicles/m)',
+                        data: densityData1,
+                        borderColor: '#ff6b6b',
+                        backgroundColor: 'rgba(255, 107, 107, 0.2)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        
+            densityChart2 = new Chart(ctx2, {
+                type: 'line',
+                data: {
+                    labels: densityData2.map((_, i) => `Segment ${i + 1}`),
+                    datasets: [{
+                        label: 'Density (vehicles/m)',
+                        data: densityData2,
+                        borderColor: '#6dd5fa',
+                        backgroundColor: 'rgba(109, 213, 250, 0.2)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+        
+
+        fetchDensityData();  // Fetch initially
+        setInterval(fetchDensityData, 5000);  // Refresh every 5 seconds
+    </script>
+</body>
+</html>
