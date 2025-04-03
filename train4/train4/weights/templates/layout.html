@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traffic Analytics</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            background: linear-gradient(135deg, #2c3e50, #4ca1af);
+            color: white;
+            padding: 15px 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+            height: 60px;
+        }
+        .header-title {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        .header-icons {
+            display: flex;
+            gap: 15px;
+            margin-left: auto;
+            padding-right: 20px;
+            position: relative;
+        }
+        .icon {
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            transition: transform 0.2s, color 0.3s;
+            color: white;
+            position: relative;
+        }
+        .icon:hover {
+            transform: scale(1.2);
+            color: #ffcc00;
+        }
+        .notification-panel {
+            display: none;
+            position: absolute;
+            top: 50px;
+            right: 20px;
+            width: 250px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            z-index: 1001;
+        }
+        .notification-header {
+            background: #4ca1af;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .notification-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .notification-item {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            font-size: 0.9em;
+        }
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+        .container {
+            display: flex;
+            width: 100%;
+            height: calc(100vh - 60px); /* Adjusted for header */
+            margin-top: 60px; /* Keeps content below header */
+        }
+        .sidebar {
+            width: 250px;
+            background: linear-gradient(135deg, #2c3e50, #4ca1af);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            position: fixed;
+            left: 0;
+            top: 90px; /* Starts just below the header */
+            color: white;
+        }
+        .logo {
+            font-size: 1.5em;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .nav {
+            display: flex;
+            flex-direction: column;
+        }
+        .nav-item {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: none;
+    padding: 12px;
+    text-align: center;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background 0.3s, transform 0.1s, box-shadow 0.3s;
+    border-radius: 8px;
+    margin: 10px 0; /* Adds vertical spacing between buttons */
+    font-weight: bold;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(1.05);
+            box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.3);
+        }
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            margin-left: 250px;
+            width: calc(100% - 250px);
+            height: 100%;
+        }
+        .content {
+            height: 100%;
+            background: #ffffff;
+            overflow: hidden;
+            display: flex;
+        }
+        .content iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: white;
+        }
+
+        .back-button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            padding: 5px 10px;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        .back-button:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+    </style>
+    <script>
+        function navigateTo(page) {
+            document.getElementById("contentFrame").src = page + ".html";
+        }
+
+        function toggleNotifications() {
+            let panel = document.getElementById("notificationPanel");
+            panel.style.display = panel.style.display === "block" ? "none" : "block";
+        }
+
+        function addNotification(message) {
+            let list = document.getElementById("notificationList");
+            let newItem = document.createElement("li");
+            newItem.className = "notification-item";
+            newItem.textContent = message;
+            list.appendChild(newItem);
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            // Example notifications
+            addNotification("🚦 Heavy traffic on Highway 101.");
+            addNotification("🚧 Road construction near Main Street.");
+            addNotification("🚔 Accident reported at 5th Avenue.");
+        });
+    </script>
+
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <span class="header-title">Traffic Analytics Center</span>
+        <div class="header-icons">
+            <button class="icon" onclick="toggleNotifications()">🔔</button>
+            <button class="icon">⚙</button>
+            <button class="icon profile-icon">👤</button>
+            
+            <!-- Notification Panel -->
+            <div class="notification-panel" id="notificationPanel">
+                <div class="notification-header">Notifications</div>
+                <ul class="notification-list" id="notificationList"></ul>
+            </div>
+        </div>
+    </header>
+    
+    <div class="container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <nav class="nav">
+                <button class="nav-item" onclick="navigateTo('dashboard')">Dashboard</button>
+                <button class="nav-item" onclick="navigateTo('upload2')">Upload</button>
+                <button class="nav-item" onclick="navigateTo('visualization2')">Visualization</button>
+                <button class="nav-item" onclick="navigateTo('index')">Video Streaming</button>
+                <button class="nav-item" onclick="navigateTo('simulation')">Traffic Simulation</button>
+                <button class="nav-item" onclick="navigateTo('teamMembers')">Team Members</button>
+            </nav>
+        </aside>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <main class="content">
+                <iframe id="contentFrame" src="dashboard.html"></iframe>
+            </main>
+        </div>
+    </div>
+</body>
+</html>
