@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Stream</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a2b4c, #2d4a7c);
+            color: white;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        h1 {
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            color: #4dabff;
+            text-shadow: 0 0 10px rgba(77, 171, 255, 0.3);
+        }
+
+        #video-container {
+            text-align: center;
+            display: flex;
+            gap: 40px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 1400px;
+            width: 100%;
+        }
+
+        .video-frame {
+            border: 3px solid #4dabff;
+            width: 640px;
+            height: 480px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(77, 171, 255, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .video-frame:hover {
+            transform: scale(1.02);
+        }
+
+        .camera-container {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .camera-container h2 {
+            margin-bottom: 15px;
+            color: #4dabff;
+            font-size: 1.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        @media (max-width: 1400px) {
+            #video-container {
+                gap: 20px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .video-frame {
+                width: 100%;
+                max-width: 640px;
+                height: auto;
+                aspect-ratio: 4/3;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Live Stream</h1>
+    <div id="video-container">
+        <div class="camera-container">
+            <h2>Live Stream Camera 1</h2>
+            <img id="video-frame-0" class="video-frame" src="" alt="Video Stream 0">
+        </div>
+        <div class="camera-container">
+            <h2>Live Stream Camera 2</h2>
+            <img id="video-frame-1" class="video-frame" src="" alt="Video Stream 1">
+        </div>
+    </div>
+
+    <script>
+        const videoFrame0 = document.getElementById("video-frame-0");
+        const videoFrame1 = document.getElementById("video-frame-1");
+        const socket = new WebSocket("ws://localhost:8765");
+
+        let frameCount = 0;
+
+        socket.onopen = () => console.log("Connected to WebSocket server");
+        socket.onmessage = (event) => {
+            const blob = new Blob([event.data], { type: "image/jpeg" });
+            const url = URL.createObjectURL(blob);
+
+            if (frameCount % 2 === 0) {
+                videoFrame0.src = url;
+            } else {
+                videoFrame1.src = url;
+            }
+
+            frameCount++;
+        };
+        socket.onclose = () => console.log("WebSocket closed");
+        socket.onerror = (error) => console.error("WebSocket Error:", error);
+    </script>
+</body>
+</html>
