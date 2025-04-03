@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tunnel Traffic Simulation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #2c3e50;
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        .road-container {
+            position: relative;
+            width: 80%;
+            height: 350px;
+            margin: 0 auto;
+            background: #7f8c8d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .road {
+            width: 40%;
+            height: 200px;
+            background: #2c3e50;
+            position: relative;
+            border-radius: 10px;
+            border: 5px solid #1a252f;
+            overflow: hidden;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+        }
+        .road::before {
+            content: "";
+            position: absolute;
+            width: 100%;
+            height: 10px;
+            background: repeating-linear-gradient(
+                90deg,
+                white,
+                white 20px,
+                transparent 20px,
+                transparent 40px
+            );
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .tunnel {
+            width: 15%;
+            height: 140px;
+            background: #34495e;
+            position: relative;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: yellow;
+            font-weight: bold;
+        }
+        .traffic-light {
+            position: absolute;
+            width: 50px;
+            height: 150px;
+            background: black;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-around;
+            padding: 10px;
+        }
+        .light {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: grey;
+        }
+        .red { background: red; }
+        .green { background: green; }
+        .yellow { background: yellow; }
+        .signal-left { left: 20%; top: 10%; transform: translateX(-50%); }
+        .signal-right { right: 20%; top: 10%; transform: translateX(50%); }
+        .vehicle {
+            width: 40px;
+            height: 20px;
+            background: red;
+            position: absolute;
+            transition: transform 3s linear;
+        }
+        .vehicle-right { left: 10px; }
+        .vehicle-left { right: 10px; }
+        .vehicle.blue { background: blue; }
+        .vehicle.green { background: greenyellow; }
+        .vehicle.yellow { background: yellow; }
+        .download-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .download-btn:hover {
+            background: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tunnel Traffic Simulation</h1>
+    <div class="road-container">
+        <div class="road" id="road1">
+            <div class="vehicle vehicle-left red" id="vehicle-left1"></div>
+            <div class="vehicle vehicle-left blue" id="vehicle-left2"></div>
+            <div class="vehicle vehicle-left green" id="vehicle-left3"></div>
+        </div>
+        <div class="tunnel">Tunnel</div>
+        <div class="road" id="road2">
+            <div class="vehicle vehicle-right yellow" id="vehicle-right1"></div>
+            <div class="vehicle vehicle-right green" id="vehicle-right2"></div>
+            <div class="vehicle vehicle-right blue" id="vehicle-right3"></div>
+        </div>
+        
+        <div class="traffic-light signal-left">
+            <div class="light" id="red-light-left"></div>
+            <div class="light" id="yellow-light-left"></div>
+            <div class="light" id="green-light-left"></div>
+        </div>
+        
+        <div class="traffic-light signal-right">
+            <div class="light" id="red-light-right"></div>
+            <div class="light" id="yellow-light-right"></div>
+            <div class="light" id="green-light-right"></div>
+        </div>
+    </div>
+    
+    <button class="download-btn" id="downloadBtn">Download Traffic Log</button>
+    
+    <script>
+        // Traffic simulation elements
+        const redLightLeft = document.getElementById('red-light-left');
+        const yellowLightLeft = document.getElementById('yellow-light-left');
+        const greenLightLeft = document.getElementById('green-light-left');
+        const redLightRight = document.getElementById('red-light-right');
+        const yellowLightRight = document.getElementById('yellow-light-right');
+        const greenLightRight = document.getElementById('green-light-right');
+    
+        const vehiclesLeft = [
+            document.getElementById('vehicle-left1'),
+            document.getElementById('vehicle-left2'),
+            document.getElementById('vehicle-left3')
+        ];
+        const vehiclesRight = [
+            document.getElementById('vehicle-right1'),
+            document.getElementById('vehicle-right2'),
+            document.getElementById('vehicle-right3')
+        ];
+        
+        // Data logging
+        let trafficLog = [];
+        let currentSegment = 0;
+        
+        // Initialize CSV headers if log is empty
+        if (trafficLog.length === 0) {
+            trafficLog.push([
+                'Timestamp',
+                'Video1 Name',
+                'Video1 Density',
+                'Video2 Name',
+                'Video2 Density',
+                'Decision',
+                'Segment'
+            ]);
+        }
+        
+        // Download button functionality
+        document.getElementById('downloadBtn').addEventListener('click', downloadCSV);
+        
+        function downloadCSV() {
+            const csvContent = trafficLog.map(row => row.join(',')).join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', `traffic_log_${new Date().toISOString().slice(0, 10)}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        function logDecision(video1Name, video1Density, video2Name, video2Density, decision) {
+            const timestamp = new Date().toISOString();
+            currentSegment++;
+            
+            trafficLog.push([
+                timestamp,
+                video1Name,
+                video1Density,
+                video2Name,
+                video2Density,
+                decision,
+                currentSegment
+            ]);
+            
+            console.log('Decision logged:', {
+                timestamp,
+                video1Name,
+                video1Density,
+                video2Name,
+                video2Density,
+                decision,
+                segment: currentSegment
+            });
+        }
+        
+        async function fetchDensityData() {
+            try {
+                const response = await fetch('/density_data');
+                const data = await response.json();
+                console.log("🔹 Fetched density data:", data);
+        
+                if (data.error) {
+                    console.error("❌ Error from server:", data.error);
+                    return;
+                }
+        
+                // Get all video keys (since we don't know the exact names)
+                const videoKeys = Object.keys(data);
+                
+                if (videoKeys.length < 2) {
+                    console.error("❌ Need data from at least two video sources");
+                    return;
+                }
+        
+                // Get the last density value from each video's data array
+                const video1Latest = data[videoKeys[0]].slice(-1)[0] || 0;
+                const video2Latest = data[videoKeys[1]].slice(-1)[0] || 0;
+
+        
+                console.log(`📊 Latest densities - ${videoKeys[0]}: ${video1Latest}, ${videoKeys[1]}: ${video2Latest}`);
+                
+                let decision;
+                
+                if (video1Latest > video2Latest) {
+                    console.log("🚦 Turning green for LEFT side and red for RIGHT side");
+                    decision = "Left";
+                    await controlTrafficLights('left');
+                    moveVehicles('left');
+                } else {
+                    console.log("🚦 Turning green for RIGHT side and red for LEFT side");
+                    decision = "Right";
+                    await controlTrafficLights('right');
+                    moveVehicles('right');
+                }
+                
+                // Log the decision
+                logDecision(
+                    videoKeys[0],
+                    video1Latest,
+                    videoKeys[1],
+                    video2Latest,
+                    decision
+                );
+                
+            } catch (error) {
+                console.error("❌ Error in simulation:", error);
+            }
+        }
+    
+        async function controlTrafficLights(side) {
+            return new Promise((resolve) => {
+                // First, turn all lights to yellow for transition
+                yellowLightLeft.classList.add('yellow');
+                yellowLightRight.classList.add('yellow');
+                redLightLeft.classList.remove('red');
+                redLightRight.classList.remove('red');
+                greenLightLeft.classList.remove('green');
+                greenLightRight.classList.remove('green');
+                
+                // After a short delay, set the final state
+                setTimeout(() => {
+                    if (side === 'left') {
+                        // Turn green for left
+                        redLightLeft.classList.remove('red');
+                        yellowLightLeft.classList.remove('yellow');
+                        greenLightLeft.classList.add('green');
+                        
+                        // Turn red for right
+                        redLightRight.classList.add('red');
+                        yellowLightRight.classList.remove('yellow');
+                        greenLightRight.classList.remove('green');
+                    } else {
+                        // Turn green for right
+                        redLightRight.classList.remove('red');
+                        yellowLightRight.classList.remove('yellow');
+                        greenLightRight.classList.add('green');
+                        
+                        // Turn red for left
+                        redLightLeft.classList.add('red');
+                        yellowLightLeft.classList.remove('yellow');
+                        greenLightLeft.classList.remove('green');
+                    }
+                    resolve();
+                }, 1000); // 1 second transition
+            });
+        }
+    
+        function moveVehicles(side) {
+            if (side === 'left') {
+                // Move left vehicles into tunnel
+                vehiclesLeft.forEach((vehicle, index) => {
+                    vehicle.style.transform = `translateX(${-150 - (index * 60)}px)`;
+                });
+                // Stop right vehicles
+                vehiclesRight.forEach(vehicle => {
+                    vehicle.style.transform = 'translateX(0)';
+                });
+            } else {
+                // Move right vehicles into tunnel
+                vehiclesRight.forEach((vehicle, index) => {
+                    vehicle.style.transform = `translateX(${150 + (index * 60)}px)`;
+                });
+                // Stop left vehicles
+                vehiclesLeft.forEach(vehicle => {
+                    vehicle.style.transform = 'translateX(0)';
+                });
+            }
+        }
+    
+        function startTrafficSimulation() {
+            // Initial state: left side green, right side red
+            controlTrafficLights('left');
+            moveVehicles('left');
+            
+            // Log initial state
+            
+            
+            // Fetch density data every 30 seconds (adjust as needed)
+            setInterval(fetchDensityData, 120000);
+            
+            // Initial fetch
+            fetchDensityData();
+        }
+    
+        document.addEventListener('DOMContentLoaded', startTrafficSimulation);
+    </script>
+</body>
+</html>
