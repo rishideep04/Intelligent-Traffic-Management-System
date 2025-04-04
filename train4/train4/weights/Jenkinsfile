@@ -1,0 +1,29 @@
+pipeline {
+    agent any
+
+    environment {
+        VENV_DIR = 'venv'
+        PYTHON = 'python'
+    }
+
+    stages {
+        stage('Set up Python Environment') {
+            steps {
+                echo 'Creating virtual environment and installing dependencies...'
+                bat "${PYTHON} -m venv ${VENV_DIR}"
+                bat ".\\${VENV_DIR}\\Scripts\\pip install --upgrade pip"
+                bat ".\\${VENV_DIR}\\Scripts\\pip install flask"
+                // Add below if you have requirements.txt
+                // bat ".\\${VENV_DIR}\\Scripts\\pip install -r requirements.txt"
+            }
+        }
+
+        stage('Run Flask App') {
+            steps {
+                echo 'Launching Flask app...'
+                bat ".\\${VENV_DIR}\\Scripts\\python app2.py"
+                // Update filename if you're using app.py or app1.py
+            }
+        }
+    }
+}
