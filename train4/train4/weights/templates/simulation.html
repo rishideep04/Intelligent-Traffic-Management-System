@@ -112,6 +112,40 @@
         .download-btn:hover {
             background: #2980b9;
         }
+
+        /* Prediction container styles (same as before) */
+        .prediction-container {
+            margin: 30px auto;
+            width: 80%;
+            background: #34495e;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .prediction-title {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #f1c40f;
+        }
+        .prediction-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .prediction-item {
+            background: #2c3e50;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .prediction-item.road1 {
+            color: #2ecc71;
+        }
+        .prediction-item.road2 {
+            color: #e74c3c;
+        }
+
     </style>
 </head>
 <body>
@@ -143,6 +177,12 @@
     </div>
     
     <button class="download-btn" id="downloadBtn">Download Traffic Log</button>
+
+    <div class="prediction-container">
+        <div class="prediction-title">Next 10 Traffic Predictions (LSTM Model)</div>
+        <div id="predictions-display">Loading predictions...</div>
+        <div class="prediction-grid" id="prediction-grid"></div>
+    </div>
     
     <script>
         // Traffic simulation elements
@@ -336,6 +376,107 @@
             }
         }
     
+        async function getLSTMPredictions() {
+            try {
+                console.log("Fetching density data...");
+                const densityResponse = await fetch('/density_data');
+                
+                if (!densityResponse.ok) {
+                    const error = await densityResponse.text();
+                    console.error(`Density data error: ${error}`);
+                    return null;
+                }
+                
+                const densityData = await densityResponse.json();
+                console.log("Raw density data:", densityData);
+                
+                // Get video keys
+                const videoKeys = Object.keys(densityData);
+                if (videoKeys.length < 2) {
+                    console.error("Need data from two video sources");
+                    return null;
+                }
+                
+                // Get last 10 values (or pad with zeros if not enough data)
+                const getLastValues = (arr) => {
+                    if (!arr || !Array.isArray(arr)) {
+                        console.warn("Invalid data array, using zeros");
+                        return Array(10).fill(0);
+                    }
+                    if (arr.length >= 10) return arr.slice(-10);
+                    return [...Array(10 - arr.length).fill(0), ...arr];
+                };
+                
+                const road1Data = getLastValues(densityData[videoKeys[0]]);
+                const road2Data = getLastValues(densityData[videoKeys[1]]);
+                
+                console.log("Sending prediction request with:", {
+                    road1_data: road1Data,
+                    road2_data: road2Data
+                });
+                
+                const predictionResponse = await fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        road1_data: road1Data,
+                        road2_data: road2Data
+                    })
+                });
+                
+                if (!predictionResponse.ok) {
+                    const error = await predictionResponse.json();
+                    console.error("Prediction error:", error);
+                    return null;
+                }
+                
+                const predictionData = await predictionResponse.json();
+                console.log("Prediction results:", predictionData);
+                return predictionData.predictions;
+                
+            } catch (error) {
+                console.error("Error in prediction pipeline:", error);
+                return null;
+            }
+        }
+        
+        function displayPredictions(predictions) {
+            const grid = document.getElementById('prediction-grid');
+            grid.innerHTML = '';
+            
+            if (!predictions || predictions.length === 0) {
+                grid.innerHTML = '<div class="prediction-item">No predictions available</div>';
+                return;
+            }
+            
+            predictions.forEach((pred) => {
+                const item = document.createElement('div');
+                item.className = `prediction-item ${pred.side === 'road1' ? 'road1' : 'road2'}`;
+                item.textContent = `${pred.step}: ${pred.side.toUpperCase()}`;
+                item.title = `Confidence: ${(pred.confidence * 100).toFixed(1)}%\n` +
+                             `Road1: ${pred.road1_pred.toFixed(4)}\n` +
+                             `Road2: ${pred.road2_pred.toFixed(4)}`;
+                grid.appendChild(item);
+            });
+        }
+
+        async function updatePredictions() {
+            const predictions = await getLSTMPredictions();
+            displayPredictions(predictions);
+            
+            // Optional: Use the first prediction for immediate control if confidence is high
+            if (predictions && predictions.length > 0 && predictions[0].confidence > 0.7) {
+                const firstPrediction = predictions[0].side;
+                const decision = firstPrediction === 'road1' ? 'left' : 'right';
+                
+                console.log(`🚦 Applying prediction: Turning ${decision} side green`);
+                await controlTrafficLights(decision);
+                moveVehicles(decision);
+            }
+        }
+
         function startTrafficSimulation() {
             // Initial state: left side green, right side red
             controlTrafficLights('left');
@@ -346,12 +487,15 @@
             
             // Fetch density data every 30 seconds (adjust as needed)
             setInterval(fetchDensityData, 120000);
-            
+            setInterval(updatePredictions, 10000);
             // Initial fetch
             fetchDensityData();
+            updatePredictions();
         }
     
         document.addEventListener('DOMContentLoaded', startTrafficSimulation);
+
+
     </script>
 </body>
 </html>
