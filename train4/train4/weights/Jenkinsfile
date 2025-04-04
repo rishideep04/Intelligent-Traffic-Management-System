@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         PYTHON = '"C:\\Users\\M AKASH REDDY\\AppData\\Local\\Programs\\Python\\Python312\\python.exe"'
-        APP_DIR = 'train4\\train4\\weights'  // Updated path to your actual app files
+        APP_DIR = 'train4\\train4\\weights' // points to your app directory
     }
 
     stages {
@@ -18,7 +18,8 @@ pipeline {
                 bat """
                 %PYTHON% -m venv venv
                 call venv\\Scripts\\activate
-                pip install -r %APP_DIR%\\requirements.txt
+                pip install -r train4\\train4\\weights\\requirements.txt
+                pip install -r train4\\train4\\weights\\templates\\requirements.txt
                 """
             }
         }
@@ -27,7 +28,8 @@ pipeline {
             steps {
                 bat """
                 call venv\\Scripts\\activate
-                cd %APP_DIR%
+                cd train4\\train4\\weights
+                cd train4\\train4\\weights\\templates
                 python -m unittest discover
                 """
             }
@@ -37,7 +39,7 @@ pipeline {
             steps {
                 bat """
                 call venv\\Scripts\\activate
-                cd %APP_DIR%
+                cd train4\\train4\\weights
                 python app2.py
                 """
             }
