@@ -2,28 +2,51 @@ pipeline {
     agent any
 
     environment {
-        VENV_DIR = 'venv'
-        PYTHON = 'python'
+        PYTHON = '"C:\\Users\\M AKASH REDDY\\AppData\\Local\\Programs\\Python\\Python312\\python.exe"'
+        APP_DIR = 'train4\\train4\\weights'  // Updated path to your actual app files
     }
 
     stages {
-        stage('Set up Python Environment') {
+        stage('Clone Repository') {
             steps {
-                echo 'Creating virtual environment and installing dependencies...'
-                bat "${PYTHON} -m venv ${VENV_DIR}"
-                bat ".\\${VENV_DIR}\\Scripts\\pip install --upgrade pip"
-                bat ".\\${VENV_DIR}\\Scripts\\pip install flask"
-                // Add below if you have requirements.txt
-                // bat ".\\${VENV_DIR}\\Scripts\\pip install -r requirements.txt"
+                git credentialsId: 'github-credentials', url: 'https://github.com/rishideep04/Intelligent-Traffic-Management-System.git'
             }
         }
 
-        stage('Run Flask App') {
+        stage('Setup Environment') {
             steps {
-                echo 'Launching Flask app...'
-                bat ".\\${VENV_DIR}\\Scripts\\python app2.py"
-                // Update filename if you're using app.py or app1.py
+                bat """
+                %PYTHON% -m venv venv
+                call venv\\Scripts\\activate
+                pip install -r %APP_DIR%\\requirements.txt
+                """
             }
+        }
+
+        stage('Run Tests') {
+            steps {
+                bat """
+                call venv\\Scripts\\activate
+                cd %APP_DIR%
+                python -m unittest discover
+                """
+            }
+        }
+
+        stage('Start Flask App') {
+            steps {
+                bat """
+                call venv\\Scripts\\activate
+                cd %APP_DIR%
+                python app2.py
+                """
+            }
+        }
+    }
+
+    post {
+        failure {
+            echo 'Pipeline failed!'
         }
     }
 }
